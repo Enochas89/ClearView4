@@ -4,19 +4,21 @@ import { supabase } from './supabaseClient'
 function App() {
   const [countries, setCountries] = useState([])
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function getCountries() {
-      const { data, error } = await supabase
-        .from('countries')
-        .select()
-
-      if (error) {
-        setError(error.message)
-        setCountries([])
-      } else {
-        setCountries(data)
-        setError(null)
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase.from('countries').select();
+        if (error) throw error;
+        setCountries(data || []);
+      } catch (err) {
+        setCountries([]);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -30,14 +32,16 @@ function App() {
         This boilerplate fetches a list of countries from a Supabase table to demonstrate the connection.
       </p>
       {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-      {countries.length > 0 ? (
+      {loading ? (
+        <p>Loading countries...</p>
+      ) : countries.length > 0 ? (
         <ul>
           {countries.map((country) => (
             <li key={country.id}>{country.name}</li>
           ))}
         </ul>
       ) : (
-        !error && <p>Loading countries or table is empty...</p>
+        !error && <p>Table is empty.</p>
       )}
     </div>
   )
